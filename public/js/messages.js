@@ -1,16 +1,54 @@
-//submits form and emits message event
-$('form').submit(function() {
-	socket.emit('message', $('#text').val());
-	$('#text').val('');
-	return false;
-});
+;(function(window, io){
 
-//handles message events
-socket.on('message', function(msg){
-	$('#messages').append($('<li>').text(msg));
-});
+	var Chat = function(args){
+		this.connect(this.onReadyState);
+	};
 
-//handles info events
-socket.on('info', function(info){
-	$('#messages').append($('<li>').text(info));
-});
+	Chat.prototype.connect = function(fn){
+
+		if( null !== io )
+			fn(this);
+		
+		/* others verifications can be made here */
+
+	};
+
+	Chat.prototype.onReadyState = function(self){
+		self.io = io();
+		self.listeners();
+		self.watch();
+	};
+
+	Chat.prototype.listeners = function(){
+		$('form').on('submit',this.sendMessage.bind(this));
+	};
+
+	Chat.prototype.sendMessage = function() {
+		event.preventDefault();
+
+		var $el = $('#text');		
+		
+		if( $el.val() || $el.val() !== '' )
+			this.io.emit('message', $el.val());
+	
+	
+		$el.val('');
+		return;
+	};
+
+	Chat.prototype.onMessage = function(data){
+		$('#messages').append($('<li>').text(data));
+	};
+
+
+	Chat.prototype.watch = function(){
+		this.io.on('message', this.onMessage);
+		this.io.on('info', this.onMessage);		
+	};
+
+
+
+	window.chat = new Chat();
+
+
+})(window, io);
